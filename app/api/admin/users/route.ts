@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || !session.user || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -26,8 +26,11 @@ export async function PATCH(request: Request) {
 
   const { userId, role } = await request.json();
 
-  if (userId === session.user.id) {
-    return NextResponse.json({ error: "Cannot change your own role" }, { status: 400 });
+  if (userId === session.user?.id) {
+    return NextResponse.json(
+      { error: "Cannot change your own role" },
+      { status: 400 },
+    );
   }
 
   if (role !== "USER" && role !== "ADMIN") {
@@ -51,8 +54,11 @@ export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get("id");
 
-  if (!userId || userId === session.user.id) {
-    return NextResponse.json({ error: "Cannot delete this user" }, { status: 400 });
+  if (!userId || userId === session.user?.id) {
+    return NextResponse.json(
+      { error: "Cannot delete this user" },
+      { status: 400 },
+    );
   }
 
   await prisma.user.delete({ where: { id: userId } });
